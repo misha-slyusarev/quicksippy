@@ -2,15 +2,16 @@
 window.onload = function () {
 
   var sipStack;
-  var session;
+  var registerSession;
+  var callSession;
 
   var eventsListener = function(e) {
     if(e.type == 'started'){
       console.log('Start session');
-      session = sipStack.newSession('register', {
+      registerSession = sipStack.newSession('register', {
         events_listener: { events: '*', listener: eventsListener }
       });
-      session.register();
+      registerSession.register();
     } 
     else if(e.type == 'i_new_message'){
       console.log('incoming message');
@@ -18,6 +19,17 @@ window.onload = function () {
     else if(e.type == 'i_new_call'){
       console.log('incoming call');
     }
+    else if( e.type = 'connected' && e.session == registerSession ){
+      makeCall();
+    }
+  }
+
+  var makeCall = function(){
+    callSession = sipStack.newSession('call-audio', {
+      audio_remote: document.getElementById('audio-remote'),
+      events_listener: { events: '*', listener: eventsListener } // optional: '*' means all events
+    });
+    callSession.call('1000');
   }
   
   var createSipStack = function() {
@@ -26,7 +38,7 @@ window.onload = function () {
       impi: 'bob',
       impu: 'sip:bob@82.196.0.20',
       password: 'mysecret',
-      outbound_proxy_url: 'udp://192.168.0.12:5060',
+      outbound_proxy_url: 'udp://82.196.0.20:4060',
       events_listener: { events: '*', listener: eventsListener },
     });
   }
