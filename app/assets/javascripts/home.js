@@ -1,6 +1,7 @@
 
 window.onload = function () {
 
+  var userName;
   var sipStack;
   var registerSession;
   var callSession;
@@ -13,45 +14,64 @@ window.onload = function () {
       });
       registerSession.register();
     } 
-    else if(e.type == 'i_new_message'){
+    else if('i_new_message' == e.type){
       console.log('incoming message');
     }
-    else if(e.type == 'i_new_call'){
+    else if('i_new_call' == e.type){
       console.log('incoming call');
+      e.newSession.accept({ audio_remote: document.getElementById('audio-remote'),
+                            events_listener: { events: '*', listener: eventsListener }
+                          });
     }
-    else if( e.type = 'connected' && e.session == registerSession ){
-      makeCall();
+    else if( 'connected' == e.type && e.session == registerSession ){
+      console.log('Connected');
+      if( 'iceking' == userName ){
+        callGhunter();
+      }
     }
   }
 
-  var makeCall = function(){
+  var callGhunter = function() {
     callSession = sipStack.newSession('call-audio', {
       audio_remote: document.getElementById('audio-remote'),
-      events_listener: { events: '*', listener: eventsListener } // optional: '*' means all events
+      events_listener: { events: '*', listener: eventsListener }
     });
-    callSession.call('1000');
+    callSession.call('ghunter');
   }
   
   var createSipStack = function() {
-    sipStack = new SIPml.Stack({
+    return new SIPml.Stack({
       realm: '82.196.0.20',
-      impi: 'bob',
-      impu: 'sip:bob@82.196.0.20',
+      impi: userName,
+      impu: 'sip:' + userName + '@82.196.0.20',
       password: 'mysecret',
       outbound_proxy_url: 'udp://82.196.0.20:4060',
+      websocket_proxy_url: 'ws://82.196.0.20:8088/ws',
       events_listener: { events: '*', listener: eventsListener },
     });
   }
 
   var readyCallback = function(e) {
-    createSipStack();
+    console.log('The engine is ready');
   };
   
   var errorCallback = function(e) {
     console.error('Failed to initialize the engine: ' + e.message);
   };
-  
-  SIPml.init(readyCallback, errorCallback);
-  sipStack.start();
+
+  var upAndGo = function(name) {
+    userName = name;
+    sipStack = createSipStack();
+    SIPml.init(readyCallback, errorCallback);
+    sipStack.start();
+  }
+
+  document.getElementById('ghunter').onclick = function() {
+    upAndGo('ghunter');
+  }
+
+  document.getElementById('iceking').onclick = function() {
+    upAndGo('iceking');
+  }
 }
 
